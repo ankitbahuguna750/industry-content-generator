@@ -1,0 +1,8 @@
+POST http://localhost:8081/api/content
+Content-Type: application/json
+
+{
+  "industry": "IT",
+  "topic": "Artificial Intelligence",
+  "tone": "Professional"
+}

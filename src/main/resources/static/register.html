@@ -1,0 +1,215 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <title>Register - AI LinkedIn Content Generator</title>
+
+    <style>
+        * {
+            box-sizing: border-box;
+        }
+
+        body {
+            margin: 0;
+            font-family: Arial, sans-serif;
+            background: #f3f6fa;
+
+            display: flex;
+            justify-content: center;
+            align-items: center;
+
+            min-height: 100vh;
+        }
+
+        .container {
+            width: 400px;
+            background: white;
+
+            padding: 30px;
+
+            border-radius: 12px;
+
+            box-shadow: 0 5px 20px rgba(0, 0, 0, 0.1);
+        }
+
+        h1 {
+            text-align: center;
+            margin-bottom: 10px;
+        }
+
+        .subtitle {
+            text-align: center;
+            color: #666;
+            margin-bottom: 25px;
+        }
+
+        label {
+            display: block;
+            margin-bottom: 6px;
+            font-weight: bold;
+        }
+
+        input {
+            width: 100%;
+            padding: 12px;
+
+            margin-bottom: 18px;
+
+            border: 1px solid #ccc;
+            border-radius: 6px;
+
+            font-size: 15px;
+        }
+
+        button {
+            width: 100%;
+
+            padding: 12px;
+
+            border: none;
+            border-radius: 6px;
+
+            background: #0a66c2;
+            color: white;
+
+            font-size: 16px;
+            cursor: pointer;
+        }
+
+        button:hover {
+            background: #084d91;
+        }
+
+        .message {
+            text-align: center;
+            margin-top: 15px;
+        }
+
+        .login-link {
+            text-align: center;
+            margin-top: 20px;
+        }
+
+        .login-link a {
+            color: #0a66c2;
+            text-decoration: none;
+        }
+    </style>
+</head>
+
+<body>
+
+<div class="container">
+
+    <h1>Create Account</h1>
+
+    <p class="subtitle">
+        AI LinkedIn Content Generator
+    </p>
+
+    <form id="registerForm">
+
+        <label>Name</label>
+
+        <input
+                type="text"
+                id="name"
+                placeholder="Enter your name"
+                required
+        >
+
+        <label>Email</label>
+
+        <input
+                type="email"
+                id="email"
+                placeholder="Enter your email"
+                required
+        >
+
+        <label>Password</label>
+
+        <input
+                type="password"
+                id="password"
+                placeholder="Enter password"
+                required
+        >
+
+        <button type="submit">
+            Register
+        </button>
+
+    </form>
+
+    <div class="message" id="message"></div>
+
+    <div class="login-link">
+        Already have an account?
+        <a href="/login.html">Login</a>
+    </div>
+
+</div>
+
+<script>
+
+    document.getElementById("registerForm")
+        .addEventListener("submit", async function(event) {
+
+            event.preventDefault();
+
+            const name =
+                document.getElementById("name").value;
+
+            const email =
+                document.getElementById("email").value;
+
+            const password =
+                document.getElementById("password").value;
+
+            const response = await fetch("/api/auth/register", {
+
+                method: "POST",
+
+                headers: {
+                    "Content-Type": "application/json"
+                },
+
+                body: JSON.stringify({
+                    name: name,
+                    email: email,
+                    password: password
+                })
+
+            });
+
+            const result = await response.text();
+
+            const message =
+                document.getElementById("message");
+
+            if (response.ok) {
+
+                message.innerText =
+                    "Registration successful!";
+
+                setTimeout(function() {
+
+                    window.location.href =
+                        "/login.html";
+
+                }, 1000);
+
+            } else {
+
+                message.innerText = result;
+            }
+
+        });
+
+</script>
+
+</body>
+</html>
