@@ -1,12 +1,11 @@
+
 package com.example.industry_content_generator.service;
 
 import com.example.industry_content_generator.dto.ContentRequest;
-
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.MediaType;
 import org.springframework.stereotype.Service;
-import org.springframework.web.client.HttpClientErrorException;
-import org.springframework.web.client.HttpServerErrorException;
+import org.springframework.web.client.HttpStatusCodeException;
 import org.springframework.web.client.RestClient;
 
 import java.util.List;
@@ -21,640 +20,236 @@ public class GeminiService {
     @Value("${gemini.model}")
     private String model;
 
-    private final RestClient restClient =
-            RestClient.create();
+    private final RestClient restClient = RestClient.create();
 
+    private static final String API_URL =
+            "https://generativelanguage.googleapis.com/v1beta/models/";
 
-    // =========================================
-    // GENERATE LINKEDIN POSTS
-    // =========================================
+    // Generates three professional LinkedIn posts using industry news.
+    public String generatePost(ContentRequest request, String news) {
 
-    public String generatePost(
-            ContentRequest request,
-            String news) {
+        if (apiKey == null || apiKey.isBlank()) {
+            throw new RuntimeException("Gemini API key is missing.");
+        }
 
-
-        // =====================================
-        // CREATE PROMPT
-        // =====================================
+        if (model == null || model.isBlank()) {
+            throw new RuntimeException("Gemini model name is missing.");
+        }
 
         String prompt = """
+                You are a professional LinkedIn content writer.
 
-                Create 3 different LinkedIn posts
-                based on the latest industry news.
+                Create exactly 3 different, high-quality LinkedIn posts
+                based on the industry news provided below.
 
-                Industry:
-                %s
+                Industry: %s
 
-                Tone:
-                %s
+                Tone: %s
 
                 Latest industry news:
                 %s
 
+                IMPORTANT FORMATTING RULES:
 
-                Requirements for EACH post:
+                1. Give each post a heading exactly like:
+                   POST 1
+                   POST 2
+                   POST 3
 
-                - Use the latest industry news as the main context.
-                - Start with a strong and interesting hook.
-                - Keep paragraphs short.
-                - Make the post visually attractive.
-                - Use relevant emojis such as 🚀 🔥 💡 👇 ✅ when appropriate.
-                - Use bullet points where useful.
-                - Add an interesting question or curiosity.
-                - Explain the main takeaway.
-                - Keep the language simple and professional.
-                - Do not write large paragraphs.
-                - Do not use unnecessary emojis.
-                - Add 3 to 5 relevant hashtags.
-                - Do not mention that AI generated the post.
-                - Do not invent facts that are not supported by the news.
-                - Make all 3 posts different in wording and style.
+                2. Start each post with an interesting and professional hook.
 
+                3. Write 2 or 3 short paragraphs explaining the news.
+                   Keep every paragraph on a separate line.
+                   Leave one blank line between paragraphs.
 
-                Use exactly this format:
+                4. Include this section heading:
+                   Key developments shaping this shift include:
 
+                   Add 3 relevant bullet points below it.
+                   Put each bullet point on its own line and start it with •.
+
+                5. Include this section:
+                   💡 Curiosity to ponder:
+                   Ask one thoughtful question related to the news.
+
+                6. Include this section:
+                   ✅ The Takeaway:
+                   Write a useful, practical conclusion.
+
+                7. Add 3 to 5 relevant hashtags at the end.
+                   Put hashtags together on their own final line.
+
+                8. Leave a blank line between each major section.
+
+                9. Use simple, professional English suitable for LinkedIn.
+                   Use relevant emojis only where appropriate.
+
+                10. Make all three posts meaningfully different.
+                    Use different hooks and wording for each post.
+
+                11. Do not invent statistics, quotes, dates, facts,
+                    announcements or sources that are not supported
+                    by the supplied news.
+
+                12. If the news does not support a specific detail,
+                    do not present that detail as a confirmed fact.
+
+                REQUIRED OUTPUT STRUCTURE:
 
                 POST 1
 
-                [first LinkedIn post]
+                [Interesting opening hook.]
 
+                [Short paragraph explaining the news.]
+
+                [Another short paragraph with context.]
+
+                Key developments shaping this shift include:
+                • [First development]
+                • [Second development]
+                • [Third development]
+
+                💡 Curiosity to ponder:
+                [One thoughtful question]
+
+                ✅ The Takeaway:
+                [Practical conclusion]
+
+                #[RelevantHashtag] #[RelevantHashtag] #[RelevantHashtag]
 
                 POST 2
 
-                [second LinkedIn post]
-
+                [Write a different post using the same structure.]
 
                 POST 3
 
-                [third LinkedIn post]
+                [Write another different post using the same structure.]
 
-
-                Return only these 3 posts.
-
+                Return only the three posts.
+                Do not include an introduction or explanation outside them.
                 """.formatted(
-
                 request.getIndustry(),
-
                 request.getTone(),
-
-                news
-
+                news == null || news.isBlank()
+                        ? "No news text was provided. Do not invent specific news events."
+                        : news
         );
 
-
-        // =====================================
-        // REQUEST BODY
-        // =====================================
-
-        Map<String, Object> body =
-
-                Map.of(
-
-                        "contents",
-
-                        List.of(
-
-                                Map.of(
-
-                                        "parts",
-
-                                        List.of(
-
-                                                Map.of(
-
-                                                        "text",
-                                                        prompt
-
-                                                )
-
-                                        )
-
+        Map<String, Object> body = Map.of(
+                "contents", List.of(
+                        Map.of(
+                                "parts", List.of(
+                                        Map.of("text", prompt)
                                 )
-
                         )
+                )
+        );
 
-                );
+        // Removes the models/ prefix if it is already present.
+        String modelName = model.trim();
 
-
-        // =====================================
-        // GEMINI URL
-        // =====================================
-
-        String url =
-
-                "https://generativelanguage.googleapis.com/v1beta/models/"
-
-                        + model
-
-                        + ":generateContent?key="
-
-                        + apiKey;
-
-
-
-        // =====================================
-        // MAX RETRIES
-        // =====================================
-
-        int maxAttempts = 3;
-
-
-
-        // =====================================
-        // RETRY LOOP
-        // =====================================
-
-        for (
-
-                int attempt = 1;
-
-                attempt <= maxAttempts;
-
-                attempt++
-
-        ) {
-
-
-            try {
-
-
-                System.out.println(
-                        "Gemini request attempt "
-                                + attempt
-                                + " of "
-                                + maxAttempts
-                );
-
-
-                // =================================
-                // SEND REQUEST
-                // =================================
-
-                Map response =
-
-                        restClient.post()
-
-                                .uri(url)
-
-                                .contentType(
-                                        MediaType.APPLICATION_JSON
-                                )
-
-                                .body(body)
-
-                                .retrieve()
-
-                                .body(Map.class);
-
-
-
-                // =================================
-                // CHECK RESPONSE
-                // =================================
-
-                if (response == null) {
-
-                    throw new RuntimeException(
-                            "Gemini returned an empty response."
-                    );
-
-                }
-
-
-
-                // =================================
-                // GET CANDIDATES
-                // =================================
-
-                List candidates =
-
-                        (List)
-                                response.get(
-                                        "candidates"
-                                );
-
-
-
-                if (
-
-                        candidates == null
-
-                                ||
-
-                                candidates.isEmpty()
-
-                ) {
-
-
-                    throw new RuntimeException(
-
-                            "Gemini did not return any content."
-
-                    );
-
-                }
-
-
-
-                // =================================
-                // FIRST CANDIDATE
-                // =================================
-
-                Map firstCandidate =
-
-                        (Map)
-                                candidates.get(0);
-
-
-
-                // =================================
-                // RESPONSE CONTENT
-                // =================================
-
-                Map responseContent =
-
-                        (Map)
-                                firstCandidate.get(
-                                        "content"
-                                );
-
-
-
-                if (responseContent == null) {
-
-
-                    throw new RuntimeException(
-
-                            "Gemini response content is empty."
-
-                    );
-
-                }
-
-
-
-                // =================================
-                // RESPONSE PARTS
-                // =================================
-
-                List parts =
-
-                        (List)
-                                responseContent.get(
-                                        "parts"
-                                );
-
-
-
-                if (
-
-                        parts == null
-
-                                ||
-
-                                parts.isEmpty()
-
-                ) {
-
-
-                    throw new RuntimeException(
-
-                            "Gemini response parts are empty."
-
-                    );
-
-                }
-
-
-
-                // =================================
-                // FIRST PART
-                // =================================
-
-                Map firstPart =
-
-                        (Map)
-                                parts.get(0);
-
-
-
-                // =================================
-                // GENERATED TEXT
-                // =================================
-
-                String generatedText =
-
-                        (String)
-                                firstPart.get(
-                                        "text"
-                                );
-
-
-
-                if (
-
-                        generatedText == null
-
-                                ||
-
-                                generatedText.isBlank()
-
-                ) {
-
-
-                    throw new RuntimeException(
-
-                            "Gemini generated empty text."
-
-                    );
-
-                }
-
-
-
-                // =================================
-                // SUCCESS
-                // =================================
-
-                System.out.println(
-                        "Gemini response received successfully."
-                );
-
-
-                return generatedText;
-
-
-
-            }
-
-            // =====================================
-            // 503 SERVICE UNAVAILABLE
-            // =====================================
-
-            catch (
-                    HttpServerErrorException.ServiceUnavailable e
-            ) {
-
-
-                System.out.println(
-                        "Gemini returned 503 Service Unavailable."
-                );
-
-
-                if (attempt == maxAttempts) {
-
-
-                    throw new RuntimeException(
-
-                            "Gemini is temporarily unavailable. "
-                                    + "The AI model is currently busy. "
-                                    + "Please try again after a few minutes."
-
-                    );
-
-                }
-
-
-                waitBeforeRetry(attempt);
-
-            }
-
-
-
-            // =====================================
-            // OTHER 5XX ERRORS
-            // =====================================
-
-            catch (
-                    HttpServerErrorException e
-            ) {
-
-
-                System.out.println(
-
-                        "Gemini server error: "
-                                + e.getStatusCode()
-
-                );
-
-
-                if (attempt == maxAttempts) {
-
-
-                    throw new RuntimeException(
-
-                            "Gemini server is currently unavailable. "
-                                    + "Please try again later."
-
-                    );
-
-                }
-
-
-                waitBeforeRetry(attempt);
-
-            }
-
-
-
-            // =====================================
-            // 429 TOO MANY REQUESTS
-            // =====================================
-
-            catch (
-                    HttpClientErrorException.TooManyRequests e
-            ) {
-
-
-                System.out.println(
-
-                        "Gemini API rate limit reached."
-
-                );
-
-
-                throw new RuntimeException(
-
-                        "Gemini API limit has been reached. "
-                                + "Please try again later."
-
-                );
-
-            }
-
-
-
-            // =====================================
-            // 400 BAD REQUEST
-            // =====================================
-
-            catch (
-                    HttpClientErrorException.BadRequest e
-            ) {
-
-
-                System.out.println(
-
-                        "Gemini returned 400 Bad Request."
-
-                );
-
-
-                throw new RuntimeException(
-
-                        "Gemini rejected the request. "
-                                + "Please check the model name and request settings."
-
-                );
-
-            }
-
-
-
-            // =====================================
-            // 401 / 403
-            // =====================================
-
-            catch (
-                    HttpClientErrorException.Unauthorized
-                    | HttpClientErrorException.Forbidden e
-            ) {
-
-
-                System.out.println(
-
-                        "Gemini API authentication/permission error."
-
-                );
-
-
-                throw new RuntimeException(
-
-                        "Gemini API authentication failed. "
-                                + "Please check your API key."
-
-                );
-
-            }
-
-
-
-            // =====================================
-            // OTHER 4XX ERRORS
-            // =====================================
-
-            catch (
-                    HttpClientErrorException e
-            ) {
-
-
-                System.out.println(
-
-                        "Gemini API error: "
-                                + e.getStatusCode()
-
-                );
-
-
-                throw new RuntimeException(
-
-                        "Gemini API request failed. "
-                                + "Please check your API settings."
-
-                );
-
-            }
-
-
-
-            // =====================================
-            // OTHER ERRORS
-            // =====================================
-
-            catch (Exception e) {
-
-
-                System.out.println(
-
-                        "Unexpected Gemini error: "
-                                + e.getMessage()
-
-                );
-
-
-                throw new RuntimeException(
-
-                        "Something went wrong while generating "
-                                + "LinkedIn content."
-
-                );
-
-            }
-
+        if (modelName.startsWith("models/")) {
+            modelName = modelName.substring("models/".length());
         }
 
-
-
-        // =========================================
-        // FINAL ERROR
-        // =========================================
-
-        throw new RuntimeException(
-
-                "Unable to generate LinkedIn posts."
-
-        );
-
-    }
-
-
-
-    // =========================================
-    // WAIT BEFORE RETRY
-    // =========================================
-
-    private void waitBeforeRetry(int attempt) {
-
+        String url = API_URL + modelName + ":generateContent";
 
         try {
+            Map<?, ?> response = restClient.post()
+                    .uri(url)
+                    .header("x-goog-api-key", apiKey)
+                    .contentType(MediaType.APPLICATION_JSON)
+                    .body(body)
+                    .retrieve()
+                    .body(Map.class);
 
+            if (response == null) {
+                throw new RuntimeException(
+                        "Gemini returned an empty response."
+                );
+            }
 
-            // 3 seconds after first attempt
-            // 6 seconds after second attempt
+            Object candidatesObject = response.get("candidates");
 
-            long waitTime =
-                    attempt * 3000L;
+            if (!(candidatesObject instanceof List<?> candidates)
+                    || candidates.isEmpty()) {
+                throw new RuntimeException(
+                        "Gemini returned no candidates: " + response
+                );
+            }
 
+            Object candidateObject = candidates.get(0);
+
+            if (!(candidateObject instanceof Map<?, ?> candidate)) {
+                throw new RuntimeException(
+                        "Invalid Gemini candidate response."
+                );
+            }
+
+            Object contentObject = candidate.get("content");
+
+            if (!(contentObject instanceof Map<?, ?> content)) {
+                throw new RuntimeException(
+                        "Gemini response content is missing."
+                );
+            }
+
+            Object partsObject = content.get("parts");
+
+            if (!(partsObject instanceof List<?> parts)
+                    || parts.isEmpty()) {
+                throw new RuntimeException(
+                        "Gemini response parts are missing."
+                );
+            }
+
+            // Collects the generated text from Gemini's response.
+            StringBuilder generatedText = new StringBuilder();
+
+            for (Object partObject : parts) {
+                if (partObject instanceof Map<?, ?> part) {
+                    Object textObject = part.get("text");
+
+                    if (textObject instanceof String text) {
+                        if (!generatedText.isEmpty()) {
+                            generatedText.append("\n");
+                        }
+
+                        generatedText.append(text);
+                    }
+                }
+            }
+
+            String result = generatedText.toString().trim();
+
+            if (result.isBlank()) {
+                throw new RuntimeException(
+                        "Gemini returned empty generated text."
+                );
+            }
 
             System.out.println(
-
-                    "Waiting "
-                            + waitTime
-                            + " ms before retry..."
-
+                    "Gemini generated LinkedIn posts successfully."
             );
 
+            return result;
 
-            Thread.sleep(waitTime);
+        } catch (HttpStatusCodeException e) {
 
+            // Prints Google's error details in the IntelliJ console.
+            System.err.println(
+                    "Gemini HTTP status: " + e.getStatusCode()
+            );
 
-        }
-
-        catch (InterruptedException e) {
-
-
-            Thread.currentThread().interrupt();
-
+            System.err.println(
+                    "Gemini error response: " + e.getResponseBodyAsString()
+            );
 
             throw new RuntimeException(
-
-                    "Gemini retry was interrupted."
-
+                    "Gemini API request failed with HTTP "
+                            + e.getStatusCode()
+                            + ". Check the IntelliJ console for details."
             );
-
         }
-
     }
-
 }

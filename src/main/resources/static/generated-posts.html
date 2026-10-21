@@ -1,0 +1,363 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <title>Generated Posts - AI LinkedIn Content Generator</title>
+
+    <style>
+        * {
+            box-sizing: border-box;
+        }
+
+        body {
+            margin: 0;
+            padding: 25px 16px;
+            background: #f3f6fa;
+            color: #252525;
+            font-family: Arial, sans-serif;
+        }
+
+        .container {
+            max-width: 850px;
+            margin: auto;
+        }
+
+        .header {
+            background: white;
+            padding: 22px;
+            border-radius: 12px;
+            margin-bottom: 22px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: 15px;
+            box-shadow: 0 4px 18px #0000000c;
+        }
+
+        h1 {
+            margin: 0 0 8px;
+            color: #17324d;
+            font-size: 25px;
+        }
+
+        .subtitle {
+            color: #68778a;
+            font-size: 14px;
+        }
+
+        .post-card {
+            background: white;
+            border: 1px solid #e1e5e9;
+            border-radius: 12px;
+            margin-bottom: 22px;
+            overflow: hidden;
+            box-shadow: 0 3px 12px #00000008;
+        }
+
+        .post-header {
+            padding: 18px 20px;
+            border-bottom: 1px solid #edf0f3;
+            color: #0a66c2;
+            font-size: 14px;
+            font-weight: bold;
+        }
+
+        .post-body {
+            padding: 22px 20px;
+            color: #343a40;
+            font-size: 15px;
+            line-height: 1.8;
+            white-space: pre-wrap;
+            overflow-wrap: anywhere;
+        }
+
+        .post-actions {
+            padding: 15px 20px 20px;
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+            border-top: 1px solid #edf0f3;
+        }
+
+        button {
+            padding: 12px 17px;
+            border: none;
+            border-radius: 7px;
+            cursor: pointer;
+            background: #0a66c2;
+            color: white;
+            font-weight: bold;
+            font-size: 14px;
+        }
+
+        button:hover {
+            background: #084f96;
+        }
+
+        button.secondary {
+            background: #e8eef5;
+            color: #17324d;
+        }
+
+        button.secondary:hover {
+            background: #d9e3ef;
+        }
+
+        button:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+        }
+
+        .message {
+            padding: 13px 16px;
+            margin-bottom: 18px;
+            border-radius: 8px;
+            background: #e8f3ff;
+            color: #174d7b;
+            line-height: 1.6;
+            overflow-wrap: anywhere;
+        }
+
+        .hidden {
+            display: none !important;
+        }
+
+        .empty-state {
+            background: white;
+            padding: 35px 20px;
+            border: 1px dashed #ccd4df;
+            border-radius: 10px;
+            text-align: center;
+            color: #68778a;
+            line-height: 1.8;
+        }
+
+        .footer {
+            display: flex;
+            justify-content: center;
+            margin: 25px 0;
+        }
+
+        @media (max-width: 600px) {
+            body {
+                padding: 14px 10px;
+            }
+
+            .header {
+                align-items: flex-start;
+                flex-direction: column;
+                padding: 18px;
+            }
+
+            h1 {
+                font-size: 22px;
+            }
+
+            .post-body {
+                padding: 18px;
+            }
+
+            .post-actions {
+                padding: 14px 18px 18px;
+            }
+
+            .post-actions button {
+                width: 100%;
+            }
+        }
+    </style>
+</head>
+
+<body>
+<div class="container">
+
+    <header class="header">
+        <div>
+            <h1>Generated LinkedIn Posts</h1>
+            <div class="subtitle">
+                AI LinkedIn Content Generator
+            </div>
+        </div>
+
+        <button type="button" class="secondary" id="backButton">
+            ← Back to Dashboard
+        </button>
+    </header>
+
+    <p id="message" class="message hidden"
+       role="status" aria-live="polite"></p>
+
+    <main id="postsContainer"></main>
+
+    <div class="footer">
+        <button type="button" class="secondary" id="backBottomButton">
+            Back to Dashboard
+        </button>
+    </div>
+
+</div>
+
+<script>
+    const postsContainer = document.getElementById("postsContainer");
+    const message = document.getElementById("message");
+
+    // Displays a message to the user.
+    function showMessage(text) {
+        message.textContent = text;
+        message.classList.remove("hidden");
+    }
+
+    // Loads posts saved by the dashboard.
+    function loadPosts() {
+        try {
+            const savedData = sessionStorage.getItem("generatedPosts");
+            const posts = savedData ? JSON.parse(savedData) : [];
+
+            if (!Array.isArray(posts) || posts.length === 0) {
+                const empty = document.createElement("div");
+                empty.className = "empty-state";
+                empty.textContent =
+                    "No generated posts found. Return to your dashboard and generate posts first.";
+
+                postsContainer.appendChild(empty);
+                return;
+            }
+
+            posts.forEach(function (post, index) {
+                createPostCard(post, index);
+            });
+
+        } catch (error) {
+            showMessage(
+                "Unable to load posts. Please return to the dashboard and generate them again."
+            );
+        }
+    }
+
+    // Creates a card for each generated post.
+    function createPostCard(post, index) {
+        const postText = typeof post === "string"
+            ? post
+            : post.content || post.text || post.post || "";
+
+        if (!postText.trim()) {
+            return;
+        }
+
+        const card = document.createElement("article");
+        card.className = "post-card";
+
+        const header = document.createElement("div");
+        header.className = "post-header";
+        header.textContent = "LINKEDIN POST " + (index + 1);
+
+        const body = document.createElement("div");
+        body.className = "post-body";
+        body.textContent = postText;
+
+        const actions = document.createElement("div");
+        actions.className = "post-actions";
+
+        // Creates the Copy Full Post button.
+        const copyButton = document.createElement("button");
+        copyButton.type = "button";
+        copyButton.className = "secondary";
+        copyButton.textContent = "📋 Copy Full Post";
+
+        // Copies the complete post, including paragraphs and hashtags.
+        copyButton.addEventListener("click", async function () {
+            try {
+                if (navigator.clipboard && window.isSecureContext) {
+                    await navigator.clipboard.writeText(postText);
+                } else {
+                    const textArea = document.createElement("textarea");
+                    textArea.value = postText;
+                    textArea.setAttribute("readonly", "");
+                    textArea.style.position = "fixed";
+                    textArea.style.left = "-9999px";
+
+                    document.body.appendChild(textArea);
+                    textArea.select();
+
+                    const copied = document.execCommand("copy");
+                    textArea.remove();
+
+                    if (!copied) {
+                        throw new Error("Copy failed");
+                    }
+                }
+
+                copyButton.textContent = "✓ Copied!";
+                showMessage(
+                    "Complete post copied. Open LinkedIn and paste it using Ctrl + V."
+                );
+
+                setTimeout(function () {
+                    copyButton.textContent = "📋 Copy Full Post";
+                }, 2000);
+
+            } catch (error) {
+                showMessage(
+                    "Copy failed. Please open this application through localhost or HTTPS and try again."
+                );
+            }
+        });
+
+        // Creates the LinkedIn publish button.
+        const publishButton = document.createElement("button");
+        publishButton.type = "button";
+        publishButton.textContent = "🚀 Open LinkedIn to Publish";
+
+        // Opens LinkedIn's feed with a request to open the post composer.
+        publishButton.addEventListener("click", function () {
+            sessionStorage.setItem("selectedLinkedInPost", postText);
+
+            const linkedinUrl =
+                "https://www.linkedin.com/feed/?shareActive=true";
+
+            const linkedinTab = window.open(
+                linkedinUrl,
+                "_blank"
+            );
+
+            if (linkedinTab) {
+                showMessage(
+                    "LinkedIn opened in a new tab. If the post editor appears, paste your post using Ctrl + V."
+                );
+            } else {
+                showMessage(
+                    "Your browser blocked the new tab. Allow pop-ups or open LinkedIn manually."
+                );
+            }
+        });
+
+        actions.appendChild(copyButton);
+        actions.appendChild(publishButton);
+
+        card.appendChild(header);
+        card.appendChild(body);
+        card.appendChild(actions);
+
+        postsContainer.appendChild(card);
+    }
+
+    // Returns to the dashboard.
+    function goToDashboard() {
+        window.location.href = "/dashboard.html";
+    }
+
+    document.getElementById("backButton")
+        .addEventListener("click", goToDashboard);
+
+    document.getElementById("backBottomButton")
+        .addEventListener("click", goToDashboard);
+
+    // Loads saved posts when the page opens.
+    loadPosts();
+</script>
+
+</body>
+</html>

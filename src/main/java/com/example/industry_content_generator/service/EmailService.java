@@ -1,191 +1,108 @@
+
 package com.example.industry_content_generator.service;
 
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.mail.SimpleMailMessage;
 import org.springframework.mail.javamail.JavaMailSender;
-import org.springframework.mail.javamail.MimeMessageHelper;
 import org.springframework.stereotype.Service;
-
-import jakarta.mail.MessagingException;
-import jakarta.mail.internet.MimeMessage;
 
 @Service
 public class EmailService {
 
-    private final JavaMailSender mailSender;
+    private final JavaMailSender javaMailSender;
 
     @Value("${spring.mail.username}")
     private String senderEmail;
 
-    public EmailService(JavaMailSender mailSender) {
-        this.mailSender = mailSender;
+    // Spring provides the email sender automatically.
+    public EmailService(JavaMailSender javaMailSender) {
+        this.javaMailSender = javaMailSender;
     }
 
-    public void sendTestEmail(String receiverEmail) {
+    // Sends OTP to verify the user's email address.
+    public void sendOtpEmail(String toEmail, String otp) {
 
-        SimpleMailMessage message =
-                new SimpleMailMessage();
+        SimpleMailMessage message = new SimpleMailMessage();
 
         message.setFrom(senderEmail);
+        message.setTo(toEmail);
+        message.setSubject("Email Verification OTP");
 
-        message.setTo(receiverEmail);
+        message.setText(
+                "Hello,\n\n" +
+                        "Your email verification OTP is: " + otp + "\n\n" +
+                        "This OTP is valid for 5 minutes.\n" +
+                        "Do not share this OTP with anyone.\n\n" +
+                        "AI LinkedIn Content Generator"
+        );
 
+        javaMailSender.send(message);
+    }
+
+    // Sends a test email to check email configuration.
+    public void sendTestEmail(String toEmail) {
+
+        SimpleMailMessage message = new SimpleMailMessage();
+
+        message.setFrom(senderEmail);
+        message.setTo(toEmail);
         message.setSubject(
                 "AI LinkedIn Content Generator - Test Email"
         );
 
-        message.setText("""
-                Hello!
+        message.setText(
+                "Hello!\n\n" +
+                        "This is a test email from AI LinkedIn Content Generator.\n\n" +
+                        "If you received this email, email sending is working.\n\n" +
+                        "Thank you."
+        );
 
-                This is a test email from your
-                AI LinkedIn Content Generator.
-
-                Email service is working successfully. ✅
-
-                Regards,
-                AI LinkedIn Content Generator
-                """);
-
-        mailSender.send(message);
+        javaMailSender.send(message);
     }
 
+    // Sends generated LinkedIn posts to the user's email.
+    public void sendLinkedInPosts(String toEmail, String posts) {
 
-    public void sendLinkedInPosts(
-            String receiverEmail,
+        SimpleMailMessage message = new SimpleMailMessage();
+
+        message.setFrom(senderEmail);
+        message.setTo(toEmail);
+        message.setSubject("Your AI-Generated LinkedIn Posts");
+
+        message.setText(
+                "Hello!\n\n" +
+                        "Here are your generated LinkedIn posts:\n\n" +
+                        posts + "\n\n" +
+                        "Please review the content before publishing it on LinkedIn.\n\n" +
+                        "AI LinkedIn Content Generator"
+        );
+
+        javaMailSender.send(message);
+    }
+
+    // Compatible method used by the existing scheduler.
+    public void sendPostsEmail(
+            String toEmail,
+            String industry,
             String posts) {
 
-        try {
+        SimpleMailMessage message = new SimpleMailMessage();
 
-            MimeMessage message =
-                    mailSender.createMimeMessage();
+        message.setFrom(senderEmail);
+        message.setTo(toEmail);
+        message.setSubject(
+                "Your " + industry + " Industry LinkedIn Posts"
+        );
 
-            MimeMessageHelper helper =
-                    new MimeMessageHelper(
-                            message,
-                            true,
-                            "UTF-8"
-                    );
+        message.setText(
+                "Hello!\n\n" +
+                        "Here are your latest AI-generated LinkedIn posts.\n\n" +
+                        "Industry: " + industry + "\n\n" +
+                        posts + "\n\n" +
+                        "Please review the content before publishing it on LinkedIn.\n\n" +
+                        "AI LinkedIn Content Generator"
+        );
 
-            helper.setFrom(senderEmail);
-
-            helper.setTo(receiverEmail);
-
-            helper.setSubject(
-                    "AI LinkedIn Content - Choose Your Post"
-            );
-
-            String[] postArray =
-                    posts.split(
-                            "(?=POST [1-3])"
-                    );
-
-            StringBuilder html =
-                    new StringBuilder();
-
-            html.append("""
-                    <html>
-                    <body style="font-family: Arial, sans-serif;">
-
-                    <h2>🚀 AI LinkedIn Content Generator</h2>
-
-                    <p>
-                    Your AI-generated LinkedIn posts are ready.
-                    Choose one post and publish it directly on LinkedIn.
-                    </p>
-
-                    """);
-
-
-            for (int i = 0; i < postArray.length; i++) {
-
-                String post = postArray[i].trim();
-
-                if (post.isEmpty()) {
-                    continue;
-                }
-
-                int postNumber = i + 1;
-
-                html.append(
-                        "<div style='"
-                                + "border:1px solid #ddd;"
-                                + "padding:20px;"
-                                + "margin-bottom:20px;"
-                                + "border-radius:10px;"
-                                + "'>"
-                );
-
-                html.append(
-                        "<h3>POST "
-                                + postNumber
-                                + "</h3>"
-                );
-
-                html.append(
-                        "<p>"
-                                + post
-                                .replace(
-                                        "\n",
-                                        "<br>"
-                                )
-                                + "</p>"
-                );
-
-                String publishUrl =
-                        "http://localhost:8081/linkedin/publish-from-email"
-                                + "?post="
-                                + java.net.URLEncoder.encode(
-                                post,
-                                java.nio.charset.StandardCharsets.UTF_8
-                        );
-
-                html.append(
-                        "<a href='"
-                                + publishUrl
-                                + "' "
-                                + "style='"
-                                + "display:inline-block;"
-                                + "padding:12px 20px;"
-                                + "background:#0A66C2;"
-                                + "color:white;"
-                                + "text-decoration:none;"
-                                + "border-radius:6px;"
-                                + "font-weight:bold;"
-                                + "'>"
-                                + "🚀 Publish Post "
-                                + postNumber
-                                + " on LinkedIn"
-                                + "</a>"
-                );
-
-                html.append("</div>");
-            }
-
-
-            html.append("""
-                    <p>
-                    Regards,<br>
-                    AI LinkedIn Content Generator
-                    </p>
-
-                    </body>
-                    </html>
-                    """);
-
-
-            helper.setText(
-                    html.toString(),
-                    true
-            );
-
-            mailSender.send(message);
-
-        } catch (MessagingException e) {
-
-            throw new RuntimeException(
-                    "Failed to create LinkedIn posts email.",
-                    e
-            );
-        }
+        javaMailSender.send(message);
     }
 }

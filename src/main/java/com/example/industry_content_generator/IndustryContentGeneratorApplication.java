@@ -1,3 +1,4 @@
+
 package com.example.industry_content_generator;
 
 import org.springframework.boot.SpringApplication;
@@ -9,7 +10,9 @@ import org.springframework.scheduling.annotation.EnableScheduling;
 public class IndustryContentGeneratorApplication {
 
     public static void main(String[] args) {
-        SpringApplication.run(IndustryContentGeneratorApplication.class, args);
+        SpringApplication.run(
+                IndustryContentGeneratorApplication.class,
+                args
+        );
     }
-
 }

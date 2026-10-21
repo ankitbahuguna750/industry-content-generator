@@ -1,0 +1,667 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>My Dashboard - AI LinkedIn Content Generator</title>
+
+    <style>
+        * {
+            box-sizing: border-box;
+        }
+
+        body {
+            margin: 0;
+            padding: 24px 16px;
+            font-family: Arial, sans-serif;
+            background: #f3f6fa;
+            color: #17324d;
+        }
+
+        .container {
+            max-width: 900px;
+            margin: auto;
+        }
+
+        .top, .card {
+            background: white;
+            border-radius: 14px;
+            padding: 24px;
+            margin-bottom: 20px;
+            box-shadow: 0 4px 18px #0000000c;
+        }
+
+        .top {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: 12px;
+        }
+
+        h1, h2 {
+            margin-top: 0;
+        }
+
+        .profile-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 16px;
+        }
+
+        label {
+            display: block;
+            font-weight: bold;
+            margin: 15px 0 7px;
+        }
+
+        input, select {
+            width: 100%;
+            min-width: 0;
+            padding: 12px;
+            border: 1px solid #ccd4df;
+            border-radius: 7px;
+            background: white;
+            font-size: 15px;
+        }
+
+        input:disabled, select:disabled, input[readonly] {
+            background: #f0f3f7;
+            color: #536477;
+        }
+
+        button {
+            border: 0;
+            border-radius: 7px;
+            padding: 12px 18px;
+            background: #0a66c2;
+            color: white;
+            cursor: pointer;
+            margin: 12px 8px 0 0;
+            font-size: 14px;
+            font-weight: bold;
+        }
+
+        button:hover {
+            background: #084f96;
+        }
+
+        button.secondary {
+            background: #e8eef5;
+            color: #17324d;
+        }
+
+        button.secondary:hover {
+            background: #d9e3ef;
+        }
+
+        button:disabled {
+            opacity: 0.6;
+            cursor: wait;
+        }
+
+        .note {
+            color: #68778a;
+            font-size: 14px;
+            line-height: 1.5;
+        }
+
+        .message {
+            overflow-wrap: anywhere;
+            line-height: 1.5;
+        }
+
+        .hidden {
+            display: none !important;
+        }
+
+        .primary-button {
+            width: 100%;
+            margin-top: 18px;
+            padding: 14px;
+        }
+
+        .post-list {
+            display: grid;
+            gap: 18px;
+        }
+
+        .post-card {
+            border: 1px solid #e0e5eb;
+            border-radius: 10px;
+            padding: 20px;
+            background: #fff;
+        }
+
+        .post-heading {
+            color: #68778a;
+            font-size: 13px;
+            margin-bottom: 16px;
+        }
+
+        .post-content {
+            white-space: pre-wrap;
+            overflow-wrap: anywhere;
+            line-height: 1.8;
+            font-size: 15px;
+            color: #343a40;
+        }
+
+        .post-actions {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+            border-top: 1px solid #e8edf2;
+            margin-top: 18px;
+            padding-top: 12px;
+        }
+
+        .post-actions button {
+            margin: 0;
+        }
+
+        .publish-button {
+            background: #0a66c2;
+        }
+
+        .empty-state {
+            padding: 25px 12px;
+            text-align: center;
+            color: #68778a;
+            border: 1px dashed #ccd4df;
+            border-radius: 10px;
+        }
+
+        @media (max-width: 600px) {
+            .profile-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .top {
+                align-items: flex-start;
+            }
+
+            .top h1 {
+                font-size: 22px;
+            }
+
+            .top, .card {
+                padding: 18px;
+            }
+        }
+    </style>
+</head>
+
+<body>
+<div class="container">
+
+    <header class="top">
+        <div>
+            <h1>My Dashboard</h1>
+            <div class="note">AI LinkedIn Content Generator</div>
+        </div>
+
+        <button type="button" class="secondary" id="logoutButton">
+            Logout
+        </button>
+    </header>
+
+    <section class="card">
+        <h2>My Profile</h2>
+
+        <div class="profile-grid">
+            <div>
+                <label for="name">Full Name</label>
+                <input id="name" type="text" readonly>
+            </div>
+
+            <div>
+                <label for="email">Email Address</label>
+                <input id="email" type="email" readonly>
+            </div>
+
+            <div>
+                <label for="industry">Industry / Profession</label>
+                <select id="industry" disabled>
+                    <option value="Technology">Technology / IT</option>
+                    <option value="Finance">Finance</option>
+                    <option value="Healthcare">Healthcare</option>
+                    <option value="Education">Education</option>
+                    <option value="Marketing">Marketing</option>
+                    <option value="Manufacturing">Manufacturing</option>
+                    <option value="Other">Other</option>
+                </select>
+            </div>
+        </div>
+
+        <button type="button" class="secondary" id="editProfileButton">
+            Edit Profile
+        </button>
+
+        <button type="button" class="hidden" id="saveProfileButton">
+            Save Profile
+        </button>
+
+        <button type="button" class="secondary hidden" id="cancelProfileButton">
+            Cancel
+        </button>
+    </section>
+
+    <section class="card">
+        <h2>Content Scheduling</h2>
+
+        <p class="note">
+            Choose when you want your LinkedIn content emailed to you.
+            Your saved recurring schedule remains active when you use Proceed.
+        </p>
+
+        <label for="frequency">Frequency</label>
+        <select id="frequency">
+            <option value="DAILY">Daily</option>
+            <option value="WEEKLY">Weekly</option>
+        </select>
+
+        <div id="weeklySection" class="hidden">
+            <label for="weeklyDay">Day of the week</label>
+            <select id="weeklyDay">
+                <option value="MONDAY">Monday</option>
+                <option value="TUESDAY">Tuesday</option>
+                <option value="WEDNESDAY">Wednesday</option>
+                <option value="THURSDAY">Thursday</option>
+                <option value="FRIDAY">Friday</option>
+                <option value="SATURDAY">Saturday</option>
+                <option value="SUNDAY">Sunday</option>
+            </select>
+        </div>
+
+        <label for="scheduleTime">Email Time (India)</label>
+        <input type="time" id="scheduleTime" value="09:00" required>
+
+        <p id="scheduleStatus" class="note">Loading saved schedule...</p>
+
+        <button type="button" id="saveScheduleButton">Save Schedule</button>
+
+        <button type="button" id="proceedButton" class="primary-button">
+            Proceed — Generate Posts &amp; Email Now
+        </button>
+    </section>
+
+    <section class="card">
+        <h2>Generated LinkedIn Posts</h2>
+
+        <p id="pageMessage" class="message" role="status"
+           aria-live="polite"></p>
+
+        <div id="generatedPosts" class="post-list">
+            <div class="empty-state">
+                Your generated LinkedIn posts will appear here.
+            </div>
+        </div>
+
+        <button type="button" id="viewAllPostsButton" class="secondary hidden">
+            View All Generated Posts
+        </button>
+    </section>
+
+</div>
+
+<script>
+    const $ = function (id) {
+        return document.getElementById(id);
+    };
+
+    let originalProfile = null;
+
+    // Shows dashboard messages.
+    function showMessage(message) {
+        $("pageMessage").textContent = message;
+    }
+
+    // Sends requests to the Spring Boot backend.
+    async function apiRequest(url, options = {}) {
+        const response = await fetch(url, {
+            credentials: "same-origin",
+            ...options,
+            headers: {
+                ...(options.body ? {
+                    "Content-Type": "application/json"
+                } : {}),
+                ...(options.headers || {})
+            }
+        });
+
+        const data = await response.json().catch(() => ({}));
+
+        if (response.status === 401) {
+            window.location.replace("/login.html");
+            throw new Error("Your session has expired. Please log in again.");
+        }
+
+        if (!response.ok) {
+            throw new Error(
+                data.message || data.error || "Request failed."
+            );
+        }
+
+        return data;
+    }
+
+    // Shows the weekday selector for weekly schedules.
+    function updateFrequency() {
+        $("weeklySection").classList.toggle(
+            "hidden",
+            $("frequency").value !== "WEEKLY"
+        );
+    }
+
+    // Locks profile fields after editing.
+    function lockProfile() {
+        $("name").readOnly = true;
+        $("industry").disabled = true;
+
+        $("editProfileButton").classList.remove("hidden");
+        $("saveProfileButton").classList.add("hidden");
+        $("cancelProfileButton").classList.add("hidden");
+    }
+
+    // Converts backend post data into a list of post strings.
+    function getPostList(data) {
+        let posts = data.posts || data.content || data.generatedPosts || "";
+
+        if (typeof posts === "string") {
+            try {
+                const parsed = JSON.parse(posts);
+
+                if (Array.isArray(parsed)) {
+                    posts = parsed;
+                } else if (parsed && typeof parsed === "object") {
+                    posts = parsed.posts || parsed.content || posts;
+                }
+            } catch (error) {
+                // Keep normal generated text as it is.
+            }
+        }
+
+        if (!Array.isArray(posts)) {
+            if (posts && typeof posts === "object") {
+                posts = [posts];
+            } else if (typeof posts === "string" && posts.trim()) {
+                posts = posts.split(/\n(?=POST\s*\d+\s*:?\s*\n?)/i)
+                    .map(post => post.trim())
+                    .filter(Boolean);
+            } else {
+                posts = [];
+            }
+        }
+
+        return posts.map(function (post) {
+            if (typeof post === "string") {
+                return post.trim();
+            }
+
+            return post.content || post.text || post.post || "";
+        }).filter(Boolean);
+    }
+
+    // Displays generated posts in separate LinkedIn-style cards.
+    function displayPosts(posts) {
+        const container = $("generatedPosts");
+        container.replaceChildren();
+
+        if (!posts.length) {
+            const empty = document.createElement("div");
+            empty.className = "empty-state";
+            empty.textContent =
+                "No posts were returned. Please check the backend response.";
+            container.appendChild(empty);
+            return;
+        }
+
+        posts.forEach(function (post, index) {
+            const card = document.createElement("article");
+            card.className = "post-card";
+
+            const heading = document.createElement("div");
+            heading.className = "post-heading";
+            heading.textContent = "POST " + (index + 1);
+
+            const content = document.createElement("div");
+            content.className = "post-content";
+            content.textContent = post;
+
+            const actions = document.createElement("div");
+            actions.className = "post-actions";
+
+            const copyButton = document.createElement("button");
+            copyButton.type = "button";
+            copyButton.className = "secondary";
+            copyButton.textContent = "Copy Post";
+
+            copyButton.addEventListener("click", async function () {
+                try {
+                    await navigator.clipboard.writeText(post);
+                    showMessage("Post " + (index + 1) + " copied successfully.");
+                } catch (error) {
+                    showMessage("Copy failed. Please select and copy the post manually.");
+                }
+            });
+
+            const publishButton = document.createElement("button");
+            publishButton.type = "button";
+            publishButton.className = "publish-button";
+            publishButton.textContent = "🚀 Publish Post on LinkedIn";
+
+            publishButton.addEventListener("click", function () {
+                sessionStorage.setItem("selectedLinkedInPost", post);
+                window.location.href = "/generated-posts.html";
+            });
+
+            actions.appendChild(copyButton);
+            actions.appendChild(publishButton);
+
+            card.appendChild(heading);
+            card.appendChild(content);
+            card.appendChild(actions);
+
+            container.appendChild(card);
+        });
+
+        sessionStorage.setItem("generatedPosts", JSON.stringify(posts));
+        $("viewAllPostsButton").classList.remove("hidden");
+    }
+
+    // Loads the logged-in user's profile and saved schedule.
+    async function loadDashboard() {
+        try {
+            const profile = await apiRequest("/api/dashboard/profile");
+
+            $("name").value = profile.name || "";
+            $("email").value = profile.email || "";
+            $("industry").value = profile.industry || "Technology";
+
+            originalProfile = {
+                name: $("name").value,
+                industry: $("industry").value
+            };
+
+            lockProfile();
+
+            const schedule = await apiRequest("/api/schedule");
+
+            $("frequency").value = schedule.emailFrequency || "DAILY";
+            $("weeklyDay").value = schedule.weeklyDay || "MONDAY";
+            $("scheduleTime").value = schedule.dailyEmailTime
+                ? String(schedule.dailyEmailTime).substring(0, 5)
+                : "09:00";
+
+            updateFrequency();
+
+            $("scheduleStatus").textContent = schedule.dailyEmailEnabled
+                ? "Your recurring schedule is active."
+                : "Your recurring schedule is not active yet. Save your schedule to activate it.";
+
+        } catch (error) {
+            showMessage(error.message);
+            $("scheduleStatus").textContent =
+                "Could not load your profile or saved schedule.";
+        }
+    }
+
+    // Enables profile editing.
+    $("editProfileButton").addEventListener("click", function () {
+        originalProfile = {
+            name: $("name").value,
+            industry: $("industry").value
+        };
+
+        $("name").readOnly = false;
+        $("industry").disabled = false;
+
+        $("editProfileButton").classList.add("hidden");
+        $("saveProfileButton").classList.remove("hidden");
+        $("cancelProfileButton").classList.remove("hidden");
+
+        $("name").focus();
+    });
+
+    // Saves the updated profile.
+    $("saveProfileButton").addEventListener("click", async function () {
+        const name = $("name").value.trim();
+        const industry = $("industry").value;
+
+        if (!name) {
+            showMessage("Please enter your name.");
+            return;
+        }
+
+        const button = $("saveProfileButton");
+        button.disabled = true;
+
+        try {
+            const data = await apiRequest("/api/dashboard/profile", {
+                method: "PUT",
+                body: JSON.stringify({ name: name, industry: industry })
+            });
+
+            originalProfile = { name: name, industry: industry };
+            lockProfile();
+            showMessage(data.message || "Profile updated successfully.");
+        } catch (error) {
+            showMessage(error.message);
+        } finally {
+            button.disabled = false;
+        }
+    });
+
+    // Cancels profile editing.
+    $("cancelProfileButton").addEventListener("click", function () {
+        if (originalProfile) {
+            $("name").value = originalProfile.name;
+            $("industry").value = originalProfile.industry;
+        }
+
+        lockProfile();
+        showMessage("Profile changes cancelled.");
+    });
+
+    // Updates the weekday selector.
+    $("frequency").addEventListener("change", updateFrequency);
+
+    // Saves the recurring schedule.
+    $("saveScheduleButton").addEventListener("click", async function () {
+        if (!$("scheduleTime").value) {
+            showMessage("Please select an email time.");
+            return;
+        }
+
+        const button = $("saveScheduleButton");
+        button.disabled = true;
+        showMessage("Saving your schedule...");
+
+        try {
+            const data = await apiRequest("/api/schedule/save", {
+                method: "POST",
+                body: JSON.stringify({
+                    scheduleType: $("frequency").value,
+                    scheduleDay: $("weeklyDay").value,
+                    scheduleTime: $("scheduleTime").value
+                })
+            });
+
+            $("scheduleStatus").textContent =
+                "Your recurring schedule is saved and active.";
+
+            showMessage(data.message || "Schedule saved successfully.");
+        } catch (error) {
+            showMessage(error.message);
+        } finally {
+            button.disabled = false;
+        }
+    });
+
+    // Generates posts and requests the backend to send the email.
+    $("proceedButton").addEventListener("click", async function () {
+        const button = $("proceedButton");
+
+        button.disabled = true;
+        $("generatedPosts").replaceChildren();
+        showMessage("Generating posts and sending email. Please wait...");
+
+        try {
+            const data = await apiRequest("/api/schedule/proceed", {
+                method: "POST"
+            });
+
+            const posts = getPostList(data);
+            displayPosts(posts);
+
+            showMessage(
+                data.message ||
+                "Generation request completed. Check your registered email."
+            );
+        } catch (error) {
+            showMessage(error.message);
+        } finally {
+            button.disabled = false;
+        }
+    });
+
+    // Opens the page containing all generated posts.
+    $("viewAllPostsButton").addEventListener("click", function () {
+        window.location.href = "/generated-posts.html";
+    });
+
+    // Logs out the user.
+    $("logoutButton").addEventListener("click", async function () {
+        $("logoutButton").disabled = true;
+
+        try {
+            await apiRequest("/api/auth/logout", { method: "POST" });
+        } catch (error) {
+            // Redirect to login even if the request fails.
+        } finally {
+            window.location.replace("/login.html");
+        }
+    });
+
+    // Restores previously generated posts after a dashboard reload.
+    function restorePosts() {
+        try {
+            const savedPosts = JSON.parse(
+                sessionStorage.getItem("generatedPosts") || "[]"
+            );
+
+            if (Array.isArray(savedPosts) && savedPosts.length) {
+                displayPosts(savedPosts);
+            }
+        } catch (error) {
+            // Ignore invalid saved data.
+        }
+    }
+
+    restorePosts();
+    loadDashboard();
+</script>
+
+</body>
+</html>

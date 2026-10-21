@@ -1,105 +1,100 @@
+
 <!DOCTYPE html>
 <html lang="en">
-
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-
     <title>Login - AI LinkedIn Content Generator</title>
 
     <style>
-
         * {
             box-sizing: border-box;
         }
 
         body {
             margin: 0;
-            font-family: Arial, sans-serif;
-            background: #f3f6fa;
-
+            min-height: 100vh;
             display: flex;
             justify-content: center;
             align-items: center;
-
-            min-height: 100vh;
+            padding: 20px;
+            font-family: Arial, sans-serif;
+            background: #f3f6fa;
         }
 
         .container {
-            width: 400px;
-            background: white;
-
+            width: 100%;
+            max-width: 400px;
             padding: 30px;
-
-            border-radius: 12px;
-
-            box-shadow: 0 5px 20px rgba(0, 0, 0, 0.1);
+            background: white;
+            border-radius: 14px;
+            box-shadow: 0 5px 25px #00000015;
         }
 
         h1 {
+            color: #17324d;
             text-align: center;
-            margin-bottom: 10px;
+            margin-bottom: 8px;
         }
 
         .subtitle {
             text-align: center;
             color: #666;
-            margin-bottom: 25px;
+            margin-bottom: 28px;
         }
 
         label {
             display: block;
-            margin-bottom: 6px;
+            margin: 16px 0 7px;
             font-weight: bold;
         }
 
         input {
             width: 100%;
-            padding: 12px;
-
-            margin-bottom: 18px;
-
+            padding: 13px;
             border: 1px solid #ccc;
-            border-radius: 6px;
-
+            border-radius: 7px;
             font-size: 15px;
+        }
+
+        input:focus {
+            outline: 2px solid #0a66c2;
+            border-color: #0a66c2;
         }
 
         button {
             width: 100%;
-            padding: 12px;
-
+            margin-top: 22px;
+            padding: 13px;
             border: none;
-            border-radius: 6px;
-
+            border-radius: 7px;
             background: #0a66c2;
             color: white;
-
             font-size: 16px;
             cursor: pointer;
         }
 
-        button:hover {
-            background: #084d91;
+        button:disabled {
+            opacity: 0.6;
+            cursor: wait;
         }
 
         .message {
             text-align: center;
-            margin-top: 15px;
+            overflow-wrap: anywhere;
+            font-size: 14px;
         }
 
         .register-link {
             text-align: center;
-            margin-top: 20px;
+            margin-top: 22px;
         }
 
-        .register-link a {
+        a {
             color: #0a66c2;
             text-decoration: none;
         }
-
     </style>
-
 </head>
 
 <body>
@@ -107,38 +102,35 @@
 <div class="container">
 
     <h1>Welcome Back</h1>
-
-    <p class="subtitle">
-        AI LinkedIn Content Generator
-    </p>
+    <p class="subtitle">AI LinkedIn Content Generator</p>
 
     <form id="loginForm">
 
-        <label>Email</label>
-
+        <label for="email">Email Address</label>
         <input
                 type="email"
                 id="email"
-                placeholder="Enter your email"
+                placeholder="Enter your registered email"
+                autocomplete="email"
                 required
         >
 
-        <label>Password</label>
-
+        <label for="password">Password</label>
         <input
                 type="password"
                 id="password"
                 placeholder="Enter your password"
+                autocomplete="current-password"
                 required
         >
 
-        <button type="submit">
+        <button type="submit" id="loginButton">
             Login
         </button>
 
     </form>
 
-    <div class="message" id="message"></div>
+    <p id="message" class="message" role="status"></p>
 
     <div class="register-link">
         Don't have an account?
@@ -147,61 +139,77 @@
 
 </div>
 
-
 <script>
-
+    // Login form submit hone par ye method chalta hai.
     document.getElementById("loginForm")
         .addEventListener("submit", async function(event) {
 
-            event.preventDefault();
+        event.preventDefault();
 
-            const email =
-                document.getElementById("email").value;
+        const button = document.getElementById("loginButton");
+        const message = document.getElementById("message");
 
-            const password =
-                document.getElementById("password").value;
+        const email = document.getElementById("email").value.trim();
+        const password = document.getElementById("password").value;
 
+        button.disabled = true;
+        button.textContent = "Logging in...";
+        message.style.color = "#555";
+        message.textContent = "Checking login...";
+
+        try {
+            // Login details Spring Boot backend ko bhejo.
             const response = await fetch("/api/auth/login", {
-
                 method: "POST",
-
                 headers: {
                     "Content-Type": "application/json"
                 },
-
+                credentials: "same-origin",
                 body: JSON.stringify({
                     email: email,
                     password: password
                 })
-
             });
 
+            // Backend response read karo.
             const result = await response.text();
 
-            const message =
-                document.getElementById("message");
+            // Login fail hone par error message dikhao.
+            if (!response.ok) {
+                let errorMessage =
+                    "Login failed. Status: " + response.status;
 
-            if (response.ok) {
+                try {
+                    const data = JSON.parse(result);
+                    errorMessage = data.message || errorMessage;
+                } catch (e) {
+                    if (result && !result.startsWith("<!DOCTYPE")) {
+                        errorMessage = result;
+                    }
+                }
 
-                message.innerText =
-                    "Login successful!";
-
-                setTimeout(function() {
-
-                    window.location.href =
-                        "/index.html";
-
-                }, 1000);
-
-            } else {
-
-                message.innerText = result;
+                throw new Error(errorMessage);
             }
 
-        });
+            // Login successful hone par Dashboard kholo.
+            message.style.color = "green";
+            message.textContent =
+                "Login successful! Opening dashboard...";
 
+            alert("Login successful! Ab dashboard khulega.");
+window.location.assign("/dashboard.html");
+
+        } catch (error) {
+            // Error ko page par dikhana.
+            message.style.color = "red";
+            message.textContent =
+                error.message || "Server se connection nahi ho raha.";
+
+            button.disabled = false;
+            button.textContent = "Login";
+        }
+    });
 </script>
 
 </body>
-
 </html>
